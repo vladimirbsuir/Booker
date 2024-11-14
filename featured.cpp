@@ -35,12 +35,23 @@ void Featured::SetBooks()
 {
     // Delete widgets
     while(QLayoutItem *tmpItem = grid->itemAt(0)) {
+        QVBoxLayout* vbox = dynamic_cast<QVBoxLayout*>(tmpItem);
+        while (QLayoutItem* tmpItem2 = vbox->itemAt(0))
+        {
+            vbox->removeItem(tmpItem2);
+            vbox->removeWidget(tmpItem2->widget());
+            delete tmpItem2->widget();
+            delete tmpItem2;
+        }
         grid->removeItem(tmpItem);
-        grid->removeWidget(tmpItem->widget());
+        //grid->removeWidget(tmpItem->widget());
         delete tmpItem->widget();
         delete tmpItem;
+        qDebug() << "Deleting\n";
     }
     grid->update();
+    //grid->deleteLater();
+    //grid = new QGridLayout();
     //
 
     int index = 0;
@@ -62,6 +73,9 @@ void Featured::SetBooks()
         lb->setPixmap(im1);
         lb->setAlignment(Qt::AlignCenter);
         MyLabel* label = new MyLabel();
+        //label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+        //label->setFixedHeight(100);
+        label->SetWType(2);
         label->setWordWrap(true);
         label->setText(titles[index]); //
         label->SetIndex(index); //
@@ -79,10 +93,13 @@ void Featured::SetBooks()
         grid->addLayout(vbox, i / 3, i % 3);
     }
 
+    grid->setSizeConstraint(QLayout::SetFixedSize);
+    grid->setHorizontalSpacing(100);
+    grid->setVerticalSpacing(20);
     this->setLayout(grid);
 
     area->setWidget(this);
-    area->resize(500, 500);
+    area->resize(200, 200);
     //for (int i = 0; i < widgets->size(); i++) grid->removeWidget((*widgets)[i]);
 }
 

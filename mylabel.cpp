@@ -5,7 +5,7 @@ MyLabel::MyLabel(QWidget* parent) : QLabel(parent) {}
 
 void MyLabel::mousePressEvent(QMouseEvent* event)
 {
-    w->SetBookPage(this->index);
+    w->SetBookPage(this->index, this->wType);
 }
 
 void MyLabel::SetIndex(int index)
@@ -16,4 +16,9 @@ void MyLabel::SetIndex(int index)
 void MyLabel::SetWindow(MainWindow *w)
 {
     this->w = w;
+}
+
+void MyLabel::SetWType(int type)
+{
+    this->wType = type;
 }

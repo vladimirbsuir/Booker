@@ -22,6 +22,7 @@ public:
     explicit RegAuthPage(QWidget *parent = nullptr, Widget* catalog = nullptr, Menu* menu = nullptr, Database* database = nullptr, User* user = nullptr, Profile* profile = nullptr);
 
     void SetProfile();
+    void SendMail(QString, int);
 
 private:
     QVBoxLayout* vbox;
@@ -31,11 +32,16 @@ private:
     QLabel* loginLabel;
     QLabel* passLabel;
     QLabel* confPassLabel;
+    QLabel* emailLabel;
+    QLabel* confEmailLabel;
     QLineEdit* login;
     QLineEdit* pass;
     QLineEdit* confPass;
+    QLineEdit* email;
+    QLineEdit* confEmail;
     QPushButton* enterBtn;
     QPushButton* backBtn;
+
 
     Widget* catalog;
     Menu* menu;

@@ -20,6 +20,10 @@ class Menu : public QWidget
 {
     Q_OBJECT
 public:
+    QLineEdit* GetLineEdit();
+    QLabel* GetPages();
+    QPushButton* GetPageBtn();
+
     explicit Menu(QWidget *parent = nullptr, Widget* catalog = nullptr, Profile* profile = nullptr, BookPage* page = nullptr, Database* database = nullptr, User* user = nullptr, Featured* featured = nullptr);
 private:
     Widget* catalog;

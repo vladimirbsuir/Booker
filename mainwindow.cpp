@@ -4,6 +4,7 @@
 #include "profile.h"
 #include "myimagelabel.h"
 #include "featured.h"
+#include "combase.h"
 #include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -11,23 +12,30 @@ MainWindow::MainWindow(QWidget *parent)
 {
     user = new User();
     database = new Database(user);
+    combase = new Combase();
+    //combase = nullptr;
 
     catalog = new Widget(nullptr, this);
     hbox = new QHBoxLayout();
-    page = new BookPage(nullptr, catalog, user);
 
     //catalog->SetMainW(this);
 
+    // Profile
     profile = new Profile(nullptr, database, user);
 
     // Featured
     featured = new Featured(nullptr, user, catalog, this);
 
+    // Book page
+    page = new BookPage(nullptr, catalog, user, featured, combase);
+
     // Menu
     menu = new Menu(nullptr, catalog, profile, page, database, user, featured);
     menu->hide();
+    page->SetMenu(menu);
     // -------------------------------
 
+    // Registration and authorization
     regAuth = new RegAuthPage(nullptr, catalog, menu, database, user, profile);
 
 
@@ -62,7 +70,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->show();
 }
 
-void MainWindow::SetBookPage(int index)
+void MainWindow::SetBookPage(int index, int type)
 {
     int isFeatured = 0;
     QVector<QString>* titles = catalog->GetTitlesV();
@@ -70,22 +78,30 @@ void MainWindow::SetBookPage(int index)
     QVector<QString>* desc = catalog->GetDescV();
     QVector<QString>* authors = catalog->GetAuthorsV();
 
+    QVector<QString>* data = combase->GetComments((*titles)[index]);
+    page->FillComments(data);
+    page->CommentExist(data);
+
+
     page->GetTitle()->setText((*titles)[index] + " | " + (*authors)[index]);
     page->GetDesc()->setText((*desc)[index]);
     page->GetImage()->setAlignment(Qt::AlignCenter);
     page->GetTitle()->setAlignment(Qt::AlignCenter);
 
+    page->SetStrTitle((*titles)[index]);
+
     page->SetIndex(index);
+    page->SetWType(type);
 //
     QPixmap im((*images)[index]);
     QSize PicSize(300, 500);
     im = im.scaled(PicSize, Qt::KeepAspectRatio);
     page->GetImage()->setPixmap(im);
 //
-    QStringList* featured = user->GetFeatured();
-    if (!featured->isEmpty())
+    QStringList* featuredBooks = user->GetFeatured();
+    if (!featuredBooks->isEmpty())
     {
-        if (featured->contains(QString::number(index))) isFeatured = 1;
+        if (featuredBooks->contains(QString::number(index))) isFeatured = 1;
         else isFeatured = 0;
     }
     else isFeatured = 0;
@@ -99,7 +115,18 @@ void MainWindow::SetBookPage(int index)
     featImage = featImage.scaled(featSize, Qt::KeepAspectRatio);
     page->GetFeatureImage()->setPixmap(featImage);
 
-    catalog->GetArea()->hide();
+    if (type == 1)
+    {
+        catalog->GetArea()->hide();
+        menu->GetLineEdit()->hide();
+        menu->GetPageBtn()->hide();
+        menu->GetPages()->hide();
+    }
+    else if (type == 2)
+    {
+        featured->GetArea()->hide();
+    }
+
     page->show();
 }
 

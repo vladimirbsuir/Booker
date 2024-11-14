@@ -16,7 +16,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    void SetBookPage(int index);
+    void SetBookPage(int index, int type);
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -34,6 +34,7 @@ private:
     User* user;
     Profile* profile;
     Featured* featured;
+    Combase* combase;
 };
 
 #endif // MAINWINDOW_H

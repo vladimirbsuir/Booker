@@ -156,3 +156,18 @@ void Menu::on_featuredBtn_clicked()
         featured->GetArea()->show();
     }
 }
+
+QLineEdit* Menu::GetLineEdit()
+{
+    return pageEnter;
+}
+
+QLabel* Menu::GetPages()
+{
+    return pages;
+}
+
+QPushButton* Menu::GetPageBtn()
+{
+    return goToPage;
+}

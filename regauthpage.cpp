@@ -3,6 +3,7 @@
 #include "widget.h"
 #include "user.h"
 #include "profile.h"
+#include "smtp.h"
 
 #include <QPainter>
 #include <QPixmap>
@@ -10,6 +11,7 @@
 #include <QImage>
 
 #include <QRegularExpression>
+#include <QRandomGenerator>
 
 RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database* database, User* user, Profile* profile)
     : QWidget{parent}
@@ -28,12 +30,17 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
     backBtn = new QPushButton("Back");
     loginLabel = new QLabel("Login");
     passLabel = new QLabel("Password");
+    emailLabel = new QLabel("Email");
+    confEmailLabel = new QLabel("Code was send to the email. Enter it in the field below:");
     confPassLabel = new QLabel("Confirm password");
     login = new QLineEdit();
     pass = new QLineEdit();
     confPass = new QLineEdit();
+    email = new QLineEdit();
+    confEmail = new QLineEdit();
 
     login->setMaxLength(25);
+    confEmail->setMaxLength(6);
 
     title->setStyleSheet("font-size: 50px");
     title->setAlignment(Qt::AlignCenter);
@@ -48,6 +55,7 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
 
     loginLabel->setStyleSheet("font-size: 30px");
     passLabel->setStyleSheet("font-size: 30px");
+    emailLabel->setStyleSheet("font-size: 30px");
     confPassLabel->setStyleSheet("font-size: 30px");
     loginLabel->setAlignment(Qt::AlignCenter);
     passLabel->setAlignment(Qt::AlignCenter);
@@ -56,6 +64,8 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
     login->setFixedWidth(200);
     pass->setFixedWidth(200);
     confPass->setFixedWidth(200);
+    email->setFixedWidth(200);;
+    confEmail->setFixedWidth(200);
 
     vbox->addWidget(title);
     vbox->addStretch(0);
@@ -70,6 +80,12 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
     vbox->addWidget(confPassLabel);
     vbox->addWidget(confPass);
     vbox->addSpacing(25);
+    vbox->addWidget(emailLabel);
+    vbox->addWidget(email);
+    vbox->addSpacing(25);
+    vbox->addWidget(confEmailLabel);
+    vbox->addWidget(confEmail);
+    vbox->addSpacing(25);
     vbox->addWidget(enterBtn);
 
     vbox->addStretch(0);
@@ -81,13 +97,21 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
     vbox->setAlignment(login, Qt::AlignHCenter);
     vbox->setAlignment(pass, Qt::AlignHCenter);
     vbox->setAlignment(confPass, Qt::AlignHCenter);
+    vbox->setAlignment(email, Qt::AlignHCenter);
+    vbox->setAlignment(emailLabel, Qt::AlignHCenter);
+    vbox->setAlignment(confEmail, Qt::AlignHCenter);
+    vbox->addWidget(confEmailLabel);
 
     loginLabel->hide();
     login->hide();
     passLabel->hide();
     pass->hide();
+    emailLabel->hide();
+    email->hide();
     confPassLabel->hide();
     confPass->hide();
+    confEmailLabel->hide();
+    confEmail->hide();
     enterBtn->hide();
     backBtn->hide();
 
@@ -108,6 +132,10 @@ void RegAuthPage::on_backBtn_clicked()
     login->hide();
     passLabel->hide();
     pass->hide();
+    emailLabel->hide();
+    email->hide();
+    confEmailLabel->hide();
+    confEmail->hide();
     confPassLabel->hide();
     confPass->hide();
     enterBtn->hide();
@@ -129,6 +157,8 @@ void RegAuthPage::on_regBtn_clicked()
     pass->show();
     confPassLabel->show();
     confPass->show();
+    emailLabel->show();
+    email->show();
     enterBtn->show();
     backBtn->show();
 }
@@ -179,6 +209,33 @@ void RegAuthPage::on_enterBtn_clicked()
         {
             QMessageBox::about(this, "Warning", "Passwords are different");
             return;
+        }
+        if (email->text() == "")
+        {
+            QMessageBox::about(this, "Warning", "Enter email");
+            return;
+        }
+
+        int value = 0;
+        if (confEmail->isHidden())
+        {
+            // Send email
+            std::uniform_int_distribution dist(100000, 10000000);
+            value = dist(*QRandomGenerator::global());
+
+            SendMail(email->text(), value);
+
+            confEmailLabel->show();
+            confEmail->show();
+            return;
+        }
+        else
+        {
+            if (!(confEmail->text().toInt() == value))
+            {
+                QMessageBox::about(this, "Warning", "Code is incorrect");
+                return;
+            }
         }
 
         database->InsertUser(login->text(), pass->text());
@@ -233,4 +290,12 @@ void RegAuthPage::on_enterBtn_clicked()
 void RegAuthPage::SetProfile()
 {
     profile->GetLoginLabel()->setText(login->text());
+}
+
+void RegAuthPage::SendMail(QString recipient, int value)
+{
+    Smtp* smtp = new Smtp("billysammers2000@gmail.com", "Vova19436", "smtp.gmail.com", 465);
+    //connect(smtp, SIGNAL(status(QString)), this, SLOT(mailSent(QString)));
+
+    smtp->sendMail("billysammers2000@gmail.com", recipient, "Code", QString::number(value));
 }

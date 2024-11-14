@@ -14,10 +14,12 @@ public:
     explicit MyLabel(QWidget *parent = nullptr);
     void SetIndex(int index);
     void SetWindow(MainWindow* w);
+    void SetWType(int type);
 protected:
     virtual void mousePressEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
 private:
     int index;
+    int wType;
     MainWindow* w;
 };
 

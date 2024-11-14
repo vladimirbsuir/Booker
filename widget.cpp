@@ -2,6 +2,8 @@
 #include "mylabel.h"
 #include "mainwindow.h"
 
+#include "bookbase.h"
+
 #include <QMessageBox>
 
 #define filePath "D:\\University\\Course Work\\BookerClass\\Data\\data.txt"
@@ -17,6 +19,31 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
 {
     this->mainw = wind;
     currentPage = 1;
+
+    // Test bookbase
+    Bookbase* bookbase = new Bookbase("D:\\University\\Course Work\\BookerClass\\Data\\testbooks.txt");
+    QVector<Item*>* books = bookbase->Read(2, 2);
+
+    QString* bookValues;
+    for (int i = 0; i < books->size(); i++)
+    {
+        bookValues = (*books)[i]->GetValues();
+        for (int j = 0; j < 5; j++)
+        {
+            qDebug() << bookValues[j];
+        }
+    }
+
+    bookbase->Write(books, 1, books->size());
+
+    Item* item = bookbase->Search("Far Cry 5");
+    qDebug() << "Founded book:";
+    for (int i = 0; i < 5; i++)
+    {
+        qDebug() << item->GetValues()[i];
+    }
+
+    //
 
     QFile file(filePath);
 
@@ -111,6 +138,7 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
             lb->setPixmap(im1);
             lb->setAlignment(Qt::AlignCenter);
             MyLabel* label = new MyLabel();
+            label->SetWType(1);
             label->setWordWrap(true);
             myLabels.append(label);
             label->setText(titles[i * cols + j]); //
