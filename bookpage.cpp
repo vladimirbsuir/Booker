@@ -5,6 +5,9 @@
 #include "featured.h"
 #include "menu.h"
 #include "combase.h"
+#include "searchingitems.h"
+
+#define rating_modifier 0
 
 BookPage::BookPage(QWidget *parent, Widget* catal, User* user, Featured* featured, Combase* combase)
     : QWidget{parent}
@@ -30,6 +33,9 @@ BookPage::BookPage(QWidget *parent, Widget* catal, User* user, Featured* feature
     title->setStyleSheet("font-size: 15px;");
     title->setWordWrap(true);
     desc = new QLabel();
+    desc->setFixedWidth(500);
+    desc->setStyleSheet("font-size: 20px;");
+    desc->setWordWrap(true);
     image = new QLabel();
     btn = new QPushButton("Back");
     //btn->setFixedWidth(200);
@@ -138,13 +144,17 @@ void BookPage::on_btn_clicked()
     if (wType == 1)
     {
         catal->GetArea()->show();
-        menu->GetPages()->show();
-        menu->GetLineEdit()->show();
-        menu->GetPageBtn()->show();
+        menu->ShowPaging();
+        menu->ShowSearching();
     }
     else if (wType == 2)
     {
         featured->GetArea()->show();
+    }
+    else if (wType == 3)
+    {
+        menu->GetSearchingWidget()->GetArea()->show();
+        menu->ShowSearching();
     }
 }
 
@@ -245,7 +255,10 @@ void BookPage::FillComments(QVector<QString>* data)
         commentsVBox->addWidget(label);
     }
 
-    main_rating /= (data->size() / 3);
+
+    if (rating_modifier == 0) throw std::overflow_error("Division by zero");
+    main_rating /= (data->size() / rating_modifier);
+
     ratingLabel->setText("Rating: " + QString::number(main_rating, 'd', 1));
 }
 

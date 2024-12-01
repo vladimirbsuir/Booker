@@ -10,6 +10,7 @@
 #include <QBrush>
 #include <QImage>
 
+#include <QShortcut>
 #include <QRegularExpression>
 #include <QRandomGenerator>
 
@@ -120,6 +121,13 @@ RegAuthPage::RegAuthPage(QWidget *parent, Widget* catalog, Menu* menu, Database*
     connect(enterBtn, SIGNAL(clicked()), SLOT(on_enterBtn_clicked()));
     connect(backBtn, SIGNAL(clicked()), SLOT(on_backBtn_clicked()));
 
+    QShortcut* enterBtnSC = new QShortcut(QKeySequence(Qt::Key_Return), this);
+    connect(enterBtnSC, SIGNAL(activated()), SLOT(on_enterBtn_clicked()));
+    enterBtnSC->setContext(Qt::WidgetWithChildrenShortcut);
+    QShortcut* backBtnSC = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(backBtnSC, SIGNAL(activated()), SLOT(on_backBtn_clicked()));
+    backBtnSC->setContext(Qt::WidgetWithChildrenShortcut);
+
     this->setLayout(vbox);
 }
 
@@ -144,6 +152,7 @@ void RegAuthPage::on_backBtn_clicked()
     login->clear();
     pass->clear();
     confPass->clear();
+    email->clear();
 }
 
 void RegAuthPage::on_regBtn_clicked()
@@ -178,6 +187,8 @@ void RegAuthPage::on_authBtn_clicked()
 
 void RegAuthPage::on_enterBtn_clicked()
 {
+    qDebug() << "Enter btn req auth";
+
     if (login->text() == "")
     {
         QMessageBox::about(this, "Warning", "Login is empty");
@@ -216,14 +227,13 @@ void RegAuthPage::on_enterBtn_clicked()
             return;
         }
 
-        int value = 0;
         if (confEmail->isHidden())
         {
             // Send email
-            std::uniform_int_distribution dist(100000, 10000000);
-            value = dist(*QRandomGenerator::global());
+            std::uniform_int_distribution dist(100000, 1000000);
+            code = dist(*QRandomGenerator::global());
 
-            SendMail(email->text(), value);
+            SendMail(email->text(), code);
 
             confEmailLabel->show();
             confEmail->show();
@@ -231,7 +241,7 @@ void RegAuthPage::on_enterBtn_clicked()
         }
         else
         {
-            if (!(confEmail->text().toInt() == value))
+            if (!(confEmail->text().toInt() == code))
             {
                 QMessageBox::about(this, "Warning", "Code is incorrect");
                 return;
@@ -243,7 +253,8 @@ void RegAuthPage::on_enterBtn_clicked()
 
     user->SetLogin(login->text());
     user->SetPass(pass->text());
-    user->SetImage(database->GetUserImage());
+    if (database->GetUserImage() == "") user->SetImage(defaultImage);
+    else user->SetImage(database->GetUserImage());
 
     //
     QString featured = database->GetUserFeatured();
@@ -294,8 +305,8 @@ void RegAuthPage::SetProfile()
 
 void RegAuthPage::SendMail(QString recipient, int value)
 {
-    Smtp* smtp = new Smtp("billysammers2000@gmail.com", "Vova19436", "smtp.gmail.com", 465);
+    Smtp* smtp = new Smtp("billysammers2000@gmail.com", "fsqe xltf gvdp uthu", "smtp.gmail.com", 465);
     //connect(smtp, SIGNAL(status(QString)), this, SLOT(mailSent(QString)));
 
-    smtp->sendMail("billysammers2000@gmail.com", recipient, "Code", QString::number(value));
+    smtp->SendMail("billysammers2000@gmail.com", recipient, "Code", QString::number(value));
 }

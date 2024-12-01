@@ -5,12 +5,15 @@
 #include "database.h"
 #include "user.h"
 #include "featured.h"
+#include "bookbase.h"
+#include "sbookbase.h"
+#include "searchingitems.h"
 
 #include <QMessageBox>
 
 #define btnH 100
 
-Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, Database* database, User* user, Featured* featured)
+Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, Database* database, User* user, Featured* featured, SearchingItems* searching)
     : QWidget{parent}
 {
     this->featured = featured;
@@ -19,6 +22,7 @@ Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, D
     this->page = page;
     this->database = database;
     this->user = user;
+    this->searching = searching;
 
     vbox = new QVBoxLayout();
     profileBtn = new QPushButton("Profile");
@@ -31,6 +35,17 @@ Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, D
     pages = new QLabel("Enter page (1-50): ");
     pageEnter = new QLineEdit();
     vboxCatalog = new QVBoxLayout();
+
+    searchLabel = new QLabel("Enter title:");
+    searchEdit = new QLineEdit();
+    searchBtn = new QPushButton("Search");
+    returnBtn = new QPushButton("Return");
+    titleSearch = new QRadioButton("Title");
+    authorSearch = new QRadioButton("Author");
+    vboxSearch = new QVBoxLayout();
+    searchWidget = new QWidget();
+
+    titleSearch->setChecked(true);
 
     connect(goToPage, SIGNAL(clicked()), SLOT(on_catBtn_clicked()));
 
@@ -46,12 +61,24 @@ Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, D
 
     vbox->addStretch(0);
 
+    catalogAdd->setLayout(vboxCatalog);
+    vbox->addWidget(catalogAdd);
+
+    vbox->addStretch(0);
+
     vboxCatalog->addWidget(pages);
     vboxCatalog->addWidget(pageEnter);
     vboxCatalog->addWidget(goToPage);
 
-    catalogAdd->setLayout(vboxCatalog);
-    vbox->addWidget(catalogAdd);
+    vboxSearch->addWidget(titleSearch);
+    vboxSearch->addWidget(authorSearch);
+    vboxSearch->addWidget(searchLabel);
+    vboxSearch->addWidget(searchEdit);
+    vboxSearch->addWidget(searchBtn);
+    vboxSearch->addWidget(returnBtn);
+
+    searchWidget->setLayout(vboxSearch);
+    vbox->addWidget(searchWidget);
 
     vbox->addStretch(0);
 
@@ -66,6 +93,10 @@ Menu::Menu(QWidget *parent, Widget* catalog, Profile* profile, BookPage* page, D
     connect(catalogBtn, SIGNAL(clicked()), SLOT(on_catalogBtn_clicked()));
     connect(quitBtn, SIGNAL(clicked()), SLOT(on_quitBtn_clicked()));
     connect(featuredBtn, SIGNAL(clicked()), SLOT(on_featuredBtn_clicked()));
+    connect(searchBtn, SIGNAL(clicked()), SLOT(on_searchBtn_clicked()));
+    connect(titleSearch, SIGNAL(clicked()), SLOT(on_titleSearch_toggled()));
+    connect(authorSearch, SIGNAL(clicked()), SLOT(on_authorSearch_toggled()));
+    connect(returnBtn, SIGNAL(clicked()), SLOT(on_returnBtn_clicked()));
 }
 
 void Menu::on_quitBtn_clicked()
@@ -110,14 +141,21 @@ void Menu::on_profileBtn_clicked()
     {
         if (!catalog->GetArea()->isHidden())
         {
-            pageEnter->hide();
-            pages->hide();
-            goToPage->hide();
+            HidePaging();
+            HideSearching();
+
             catalog->GetArea()->hide();
         }
         if (!page->isHidden()) page->hide();
         if (!featured->GetArea()->isHidden()) featured->GetArea()->hide();
+        if (!searching->GetArea()->isHidden()) searching->GetArea()->hide();
 
+        if (user->GetLogin() == aLogin && user->GetPass() == aPass)
+        {
+            //profile->GetUpdateItemBtn()->show();
+            //profile->GetAddItemBtn()->show();
+            profile->ShowABtns();
+        }
         profile->show();
     }
 }
@@ -126,13 +164,17 @@ void Menu::on_catalogBtn_clicked()
 {
     if (catalog->GetArea()->isHidden())
     {
-        if (!profile->isHidden()) profile->hide();
+        if (!profile->isHidden())
+        {
+            //profile->GetAddItemBtn()->hide();
+            profile->hide();
+        }
         if (!page->isHidden()) page->hide();
         if (!featured->GetArea()->isHidden()) featured->GetArea()->hide();
+        if (!searching->GetArea()->isHidden()) searching->GetArea()->hide();
 
-        pageEnter->show();
-        pages->show();
-        goToPage->show();
+        ShowPaging();
+        ShowSearching();
 
         catalog->GetArea()->show();
     }
@@ -142,13 +184,18 @@ void Menu::on_featuredBtn_clicked()
 {
     if (featured->GetArea()->isHidden())
     {
-        if (!profile->isHidden()) profile->hide();
+        if (!profile->isHidden())
+        {
+            //profile->GetAddItemBtn()->hide();
+            profile->hide();
+        }
         if (!page->isHidden()) page->hide();
+        if (!searching->GetArea()->isHidden()) searching->GetArea()->hide();
         if (!catalog->GetArea()->isHidden())
         {
-            pageEnter->hide();
-            pages->hide();
-            goToPage->hide();
+            HidePaging();
+            HideSearching();
+
             catalog->GetArea()->hide();
         }
 
@@ -157,17 +204,86 @@ void Menu::on_featuredBtn_clicked()
     }
 }
 
-QLineEdit* Menu::GetLineEdit()
+void Menu::on_searchBtn_clicked()
 {
-    return pageEnter;
+    int type = 0;
+
+    if (searchEdit->text() == "")
+    {
+        QMessageBox::warning(this, "Warning", "Fill search field");
+        return;
+    }
+
+    if (titleSearch->isChecked()) type = 2;
+    else if (authorSearch->isChecked()) type = 3;
+
+    QVector<Item*>* books = catalog->GetBookbase()->Search(searchEdit->text(), type);
+    QVector<Item*>* sbooks = catalog->GetSBookbase()->Search(searchEdit->text(), type);
+    QVector<Item*>* items = new QVector<Item*>();
+    if (sbooks != nullptr) items->append(*sbooks);
+    if (books != nullptr) items->append(*books);
+
+    catalog->GetArea()->hide();
+    this->HidePaging();
+    searching->SetItems(items);
 }
 
-QLabel* Menu::GetPages()
+void Menu::on_returnBtn_clicked()
 {
-    return pages;
+    if (!searching->GetArea()->isHidden())
+    {
+        searching->GetArea()->hide();
+        catalog->GetArea()->show();
+        this->ShowPaging();
+        searchEdit->clear();
+    }
 }
 
-QPushButton* Menu::GetPageBtn()
+void Menu::on_titleSearch_toggled()
 {
-    return goToPage;
+    searchLabel->setText("Enter title:");
+}
+
+void Menu::on_authorSearch_toggled()
+{
+    searchLabel->setText("Enter author:");
+}
+
+void Menu::HideSearching()
+{
+    searchLabel->hide();
+    searchEdit->hide();
+    titleSearch->hide();
+    authorSearch->hide();
+    searchBtn->hide();
+    returnBtn->hide();
+}
+
+void Menu::ShowSearching()
+{
+    searchLabel->show();
+    searchEdit->show();
+    titleSearch->show();
+    authorSearch->show();
+    searchBtn->show();
+    returnBtn->show();
+}
+
+void Menu::HidePaging()
+{
+    pageEnter->hide();
+    pages->hide();
+    goToPage->hide();
+}
+
+void Menu::ShowPaging()
+{
+    pageEnter->show();
+    pages->show();
+    goToPage->show();
+}
+
+SearchingItems* Menu::GetSearchingWidget()
+{
+    return searching;
 }

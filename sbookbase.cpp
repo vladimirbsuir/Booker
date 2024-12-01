@@ -1,18 +1,14 @@
-#include "bookbase.h"
+#include "sbookbase.h"
 #include <QRegularExpression>
 
-// Search, Update, Delete
-
-#include <QDebug>
-
-Bookbase::Bookbase(QString filePath) {
+SBookbase::SBookbase(QString filePath) {
     file.setFileName(filePath);
-    obj_size = book_size;
+    obj_size = sbook_size;
 }
 
-QVector<Item*>* Bookbase::Read(int from, int to)
+QVector<Item*>* SBookbase::Read(int from, int to)
 {
-    QVector<Item*>* books = new QVector<Item*>();
+    QVector<Item*>* SBooks = new QVector<Item*>();
 
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -26,19 +22,26 @@ QVector<Item*>* Bookbase::Read(int from, int to)
 
         QByteArray rawLine;
         QString line;
-        Book* book;
+        SerialBook* SBook;
 
         while (from <= to)
         {
-            books->append(new Book(5));
+            SBooks->append(new SerialBook(6));
 
             for (int i = 0; i < obj_size; i++)
             {
                 rawLine = file.readLine();
                 line = QString::fromUtf8(rawLine);
                 line.remove('\n');
-                book = dynamic_cast<Book*>((*books)[books->size() - 1]);
-                book->GetValues()[i] = line;
+                SBook = dynamic_cast<SerialBook*>((*SBooks)[SBooks->size() - 1]);
+                SBook->GetValues()[i] = line;
+
+                if (i == obj_size - 1)
+                {
+                    QStringList list = line.split(" ", Qt::SkipEmptyParts);
+
+                    foreach (QString num, list) SBook->GetIds()->append(num.toInt());
+                }
             }
 
             from++;
@@ -48,10 +51,10 @@ QVector<Item*>* Bookbase::Read(int from, int to)
 
     file.close();
 
-    return books;
+    return SBooks;
 }
 
-void Bookbase::Write(QVector<Item*>* books, int from, int to)
+void SBookbase::Write(QVector<Item*>* books, int from, int to)
 {
     if (from > books->size() || to > books->size()) return;
 
@@ -66,7 +69,7 @@ void Bookbase::Write(QVector<Item*>* books, int from, int to)
         {
             values = (*books)[from - 1]->GetValues();
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 file.write((values[i] + "\n").toUtf8());
             }
@@ -79,17 +82,17 @@ void Bookbase::Write(QVector<Item*>* books, int from, int to)
     file.close();
 }
 
-QVector<Item*>* Bookbase::Search(QString data, int type)
-{ // Title: type 2, Author: type 3, ID: type 4
+QVector<Item*>* SBookbase::Search(QString data, int type)
+{ // Title: type 2, Author: 3, ID: type 4
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         QByteArray rawData = (data + "\n").toUtf8();
-        QByteArray* rawLines = new QByteArray[5];
+        QByteArray* rawLines = new QByteArray[6];
         QVector<Item*>* items = new QVector<Item*>();
 
         while (!file.atEnd())
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 6; i++)
             {
                 if (file.atEnd())
                 {
@@ -102,10 +105,10 @@ QVector<Item*>* Bookbase::Search(QString data, int type)
 
             if (rawData == rawLines[type])
             {
-                Item* item = new Book(5);
+                Item* item = new SerialBook(6);
                 QString* values = item->GetValues();
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 6; i++)
                 {
                     values[i] = QString::fromUtf8(rawLines[i]).remove("\n");
                 }
@@ -115,7 +118,6 @@ QVector<Item*>* Bookbase::Search(QString data, int type)
                 if (type != 3)
                 {
                     file.close();
-                    //delete[] rawLines;
                     return items;
                 }
             }
@@ -127,11 +129,11 @@ QVector<Item*>* Bookbase::Search(QString data, int type)
         if (type == 3 && !(items->isEmpty())) return items;
     }
 
-    return nullptr;
     //delete items;
+    return nullptr;
 }
 
-bool Bookbase::Update(QString data, int type, QString desc)
+bool SBookbase::Update(QString data, int type, QString desc)
 {
     QByteArray rawLine;
     QString oldDesc;
@@ -139,37 +141,22 @@ bool Bookbase::Update(QString data, int type, QString desc)
 
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        // Type 1: title, Type 2: id
         rawLine = file.readAll();
         text = new QString(rawLine);
 
         int index = (*text).indexOf(data);
-        //if (!index) return 0;
-        //index -= 2;
-        qDebug() << index;
+        index -= 2;
 
-        int i = 0;
-        if (type == 1)
-        {
-            //i = 1;
-            index -= 2;
-            while ((*text)[index - 1] != '\n') index--;
-        }
-        else if (type == 2)
-        {
-            //i = 3;
-            while ((*text)[index] != '\n') index++;
-            index++;
-        }
-
+        while ((*text)[index - 1] != '\n') index--;
         while ((*text)[index] != '\n')
         {
             oldDesc += (*text)[index];
             index++;
         }
 
-        QRegularExpression reg(oldDesc);
-        (*text).replace(reg, desc);
+        //QRegularExpression reg(oldDesc);
+        //(*text).replace(reg, desc);
+        (*text).replace(oldDesc, desc);
 
         file.close();
 
@@ -185,11 +172,11 @@ bool Bookbase::Update(QString data, int type, QString desc)
     return 0;
 }
 
-bool Bookbase::Delete(QString data, int type)
+
+bool SBookbase::Delete(QString data, int type)
 {
     data += '\n';
 
-    int flag = 0;
     int startIndex = 0;
     if (type == 1) startIndex = 2;
     else if (type == 2) startIndex = 4;
@@ -206,24 +193,17 @@ bool Bookbase::Delete(QString data, int type)
 
         file.close();
 
-        for (int i = startIndex; i < text->size(); i += 5)
+        for (int i = startIndex; i < text->size(); i += 6)
         {
             if ((*text)[i] == data)
             {
-                flag = 1;
                 int j = i - startIndex;
-                int jLast = j + 5;
+                int jLast = j + 6;
                 for (j; j < jLast; j++)
                 {
                     (*text)[j] = "";
                 }
             }
-        }
-
-        if (!flag)
-        {
-            delete text;
-            return 0;
         }
 
         if (file.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -238,4 +218,7 @@ bool Bookbase::Delete(QString data, int type)
             return 1;
         }
     }
+
+    delete text;
+    return 0;
 }

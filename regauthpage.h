@@ -49,6 +49,8 @@ private:
     User* user;
     Profile* profile;
 
+    int code;
+
 public slots:
     void on_regBtn_clicked();
     void on_authBtn_clicked();

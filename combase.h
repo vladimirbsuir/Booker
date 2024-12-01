@@ -1,10 +1,9 @@
 #ifndef COMBASE_H
 #define COMBASE_H
 
-#include <QSqlDatabase>
-#include <QSqlQuery>
+#include "obase.h"
 
-class Combase
+class Combase : public OBase
 {
 public:
     void InsertComment(QString, QString, QString, int);
@@ -14,8 +13,9 @@ public:
     Combase();
 
 private:
-    QSqlDatabase db;
-    QSqlQuery* query;
+    int com_amount;
+    //QSqlDatabase db;
+    //QSqlQuery* query;
 };
 
 #endif // COMBASE_H

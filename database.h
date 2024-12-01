@@ -1,12 +1,11 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include <QSqlDatabase>
-#include <QSqlQuery>
+#include "obase.h"
 
 class User;
 
-class Database
+class Database : public OBase
 {
 public:
     Database(User* user = nullptr);
@@ -21,8 +20,8 @@ public:
 private:
     User* user;
 
-    QSqlDatabase db;
-    QSqlQuery* query;
+    //QSqlDatabase db;
+    //QSqlQuery* query;
 };
 
 #endif // DATABASE_H

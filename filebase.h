@@ -10,8 +10,9 @@ class Filebase {
 public:
     virtual QVector<Item*>* Read(int, int) = 0;
     virtual void Write(QVector<Item*>*, int, int) = 0;
-    virtual Item* Search(QString) = 0;
-    //virtual bool Update(QString, QString);
+    virtual QVector<Item*>* Search(QString, int) = 0;
+    virtual bool Update(QString, int, QString) = 0;
+    virtual bool Delete(QString, int) = 0;
 
 protected:
     QFile file;

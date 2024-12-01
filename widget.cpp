@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 
 #include "bookbase.h"
+#include "sbookbase.h"
 
 #include <QMessageBox>
 
@@ -11,7 +12,8 @@
 #define cols 3
 #define btnsAmount 9
 #define booksAmount 9
-#define booksInFile 60
+#define booksInFile 90
+#define sbooksInFile 103
 #define fontSize 35
 
 Widget::Widget(QWidget *parent, MainWindow* wind)
@@ -21,10 +23,13 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
     currentPage = 1;
 
     // Test bookbase
-    Bookbase* bookbase = new Bookbase("D:\\University\\Course Work\\BookerClass\\Data\\testbooks.txt");
-    QVector<Item*>* books = bookbase->Read(2, 2);
 
-    QString* bookValues;
+    //Bookbase* bookbase = new Bookbase("D:\\University\\Course Work\\BookerClass\\Data\\testbooks.txt");
+    //QVector<Item*>* books = bookbase->Read(2, 2);
+
+    //bookbase->Delete("Far Cry 5", 1);
+
+    /*QString* bookValues;
     for (int i = 0; i < books->size(); i++)
     {
         bookValues = (*books)[i]->GetValues();
@@ -32,30 +37,65 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
         {
             qDebug() << bookValues[j];
         }
-    }
+    }*/
 
-    bookbase->Write(books, 1, books->size());
+    //bookbase->Write(books, 1, books->size());
 
-    Item* item = bookbase->Search("Far Cry 5");
+    /*Item* item = bookbase->Search("Far Cry 5");
     qDebug() << "Founded book:";
     for (int i = 0; i < 5; i++)
     {
         qDebug() << item->GetValues()[i];
     }
 
+    bookbase->Update("Far Cry 5", "That's good");*/
+
     //
 
-    QFile file(filePath);
+    // Test serialbook base
+    /*SBookbase* sbookbase = new SBookbase("D:\\University\\Course Work\\BookerClass\\Data\\testsbooks.txt");
+    QVector<Item*>* sbooks = sbookbase->Search("Надя Сова", 3);
+
+    QString* bookValues;
+    for (int i = 0; i < sbooks->size(); i++)
+    {
+        bookValues = (*sbooks)[i]->GetValues();
+        for (int j = 0; j < 5; j++)
+        {
+            qDebug() << bookValues[j];
+        }
+    }*/
+
+    //sbookbase->Write(sbooks, 1, sbooks->size());
+
+    /*Item* item = sbookbase->Search("Liho station");
+    qDebug() << "Founded book:";
+    for (int i = 0; i < 5; i++)
+    {
+        qDebug() << item->GetValues()[i];
+    }
+
+    sbookbase->Update("Liho station", "That's good");*/
+
+    // // // // // // // // // // //
+
+    // D:\\University\\Course Work\\BookerClass\\Data\\data.txt // 90
+    bookbase = new Bookbase("D:\\University\\Course Work\\BookerClass\\Data\\data.txt");
+    books = bookbase->Read(1, 90);
+
+    // D:\\University\\Course Work\\BookerClass\\Data\\sbooks.txt // 13
+    sbookbase = new SBookbase("D:\\University\\Course Work\\BookerClass\\Data\\sbooks.txt");
+    sbooks = sbookbase->Read(1, 13);
+
+    /*QFile file(filePath);
 
     if (file.open(QIODevice::ReadWrite | QIODevice::Text))
     {
-        /*size_t l = 8;
+        size_t l = 8;
         for (size_t i = 0; i < l; i++)
         {
             file.readLine();
-        }*/
-
-
+        }
 
         while (!file.atEnd())
         {
@@ -96,10 +136,7 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
     for (size_t i = 0; i < titles.size(); i++)
     {
         qDebug() << titles[i] << Qt::endl;
-    }
-
-    //qDebug() << "a";
-    //qDebug() << line;
+    }*/
 
     grid = new QGridLayout();
 
@@ -126,7 +163,7 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
         }
     }*/
 
-    for (int i = 0; i < rows; i++)
+    /*for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
@@ -161,6 +198,53 @@ Widget::Widget(QWidget *parent, MainWindow* wind)
             //labels.append(label);
             grid->addLayout(vbox, i, j);
         }
+    }*/
+
+    int flag = 0;
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            if (i * cols + j == books->size())
+            {
+                flag = 1;
+                break;
+            }
+
+            QPixmap im1((*books)[i * cols + j]->GetValues()[0]);
+            QLabel* lb = new QLabel();
+            imageLabels.append(lb);
+            QSize PicSize(500, 500);
+            im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
+            lb->setPixmap(im1);
+            lb->setAlignment(Qt::AlignCenter);
+            MyLabel* label = new MyLabel();
+            label->SetWType(1);
+            label->setWordWrap(true);
+            myLabels.append(label);
+            label->setText((*books)[i * cols + j]->GetValues()[2]); //
+            label->SetIndex(i * cols + j); //
+            //QWidget* wwww = this->parentWidget();
+            //qDebug() << qobject_cast<MainWindow*>(this->parentWidget());
+            //qDebug() << qobject_cast<MainWindow*>(this->mainw);
+            label->SetWindow(this->mainw); //
+            label->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+            label->setAlignment(Qt::AlignCenter);
+            QFont font = label->font();
+            font.setPixelSize(fontSize);
+            label->setFont(font);
+            QVBoxLayout* vbox = new QVBoxLayout();
+            vbox->addWidget(lb);
+            vbox->addWidget(label);
+            //labels.append(label);
+
+            //btns.append(lb);
+            //labels.append(label);
+            grid->addLayout(vbox, i, j);
+        }
+
+        if (flag) break;
     }
 
     QPixmap im1("D:\\University\\Course Work\\BookerClass\\Data\\Images\\Image.png");
@@ -241,14 +325,28 @@ void Widget::on_pageCatBtn_clicked(int goTo)
     {
         for (int j = 0; j < cols; j++)
         {
-            if (i * cols + j + startBook >= booksInFile) return;
-
-            QPixmap im1(images[i * cols + j + startBook]);
-            QSize PicSize(500, 500);
-            im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
-            imageLabels[i * cols + j]->setPixmap(im1);
-            myLabels[i * cols + j]->setText(titles[i * cols + j + startBook]);
-            myLabels[i * cols + j]->SetIndex(i * cols + j + startBook); //
+            if (i * cols + j + startBook >= booksInFile)
+            {
+                if (i * cols + j + startBook >= sbooksInFile) return;
+                else
+                {
+                    QPixmap im1((*sbooks)[i * cols + j + startBook - booksInFile]->GetValues()[0]);
+                    QSize PicSize(500, 500);
+                    im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
+                    imageLabels[i * cols + j]->setPixmap(im1);
+                    myLabels[i * cols + j]->setText((*sbooks)[i * cols + j + startBook - booksInFile]->GetValues()[2]);
+                    myLabels[i * cols + j]->SetIndex(i * cols + j + startBook);
+                }
+            }
+            else
+            {
+                QPixmap im1((*books)[i * cols + j + startBook]->GetValues()[0]);
+                QSize PicSize(500, 500);
+                im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
+                imageLabels[i * cols + j]->setPixmap(im1);
+                myLabels[i * cols + j]->setText((*books)[i * cols + j + startBook]->GetValues()[2]);
+                myLabels[i * cols + j]->SetIndex(i * cols + j + startBook); //
+            }
         }
     }
 }
@@ -302,35 +400,51 @@ void Widget::on_pageBtn_clicked()
         {
             for (int j = 0; j < cols; j++)
             {
-                if (i * cols + j + startBook >= booksInFile) return;
+                if (i * cols + j + startBook >= booksInFile)
+                {
+                    if (i * cols + j + startBook >= sbooksInFile) return;
+                    else
+                    {
+                        QPixmap im1((*sbooks)[i * cols + j + startBook - booksInFile]->GetValues()[0]);
+                        QSize PicSize(500, 500);
+                        im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
+                        imageLabels[i * cols + j]->setPixmap(im1);
+                        myLabels[i * cols + j]->setText((*sbooks)[i * cols + j + startBook - booksInFile]->GetValues()[2]);
+                        myLabels[i * cols + j]->SetIndex(i * cols + j + startBook);
+                    }
+                }
+                else
+                {
+                    //return;
 
-                QPixmap im1(images[i * cols + j + startBook]);
-                QSize PicSize(500, 500);
-                im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
-                //lb->setPixmap(im1);
-                imageLabels[i * cols + j]->setPixmap(im1);
-                //lb->setAlignment(Qt::AlignCenter);
-                //MyLabel* label = new MyLabel();
-                myLabels[i * cols + j]->setText(titles[i * cols + j + startBook]);
-                //label->setText(titles[i * cols + j]); //
-                myLabels[i * cols + j]->SetIndex(i * cols + j + startBook); //
-                //QWidget* wwww = this->parentWidget();
-                //qDebug() << qobject_cast<MainWindow*>(this->parentWidget());
-                //qDebug() << qobject_cast<MainWindow*>(this->mainw);
-                //label->SetWindow(this->mainw); //
-                //label->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-                //label->setAlignment(Qt::AlignCenter);
-                //QFont font = label->font();
-                //font.setPixelSize(50);
-                //label->setFont(font);
-                //QVBoxLayout* vbox = new QVBoxLayout();
-                //vbox->addWidget(lb);
-                //vbox->addWidget(label);
-                //labels.append(label);
+                    QPixmap im1((*books)[i * cols + j + startBook]->GetValues()[0]);
+                    QSize PicSize(500, 500);
+                    im1 = im1.scaled(PicSize, Qt::KeepAspectRatio);
+                    //lb->setPixmap(im1);
+                    imageLabels[i * cols + j]->setPixmap(im1);
+                    //lb->setAlignment(Qt::AlignCenter);
+                    //MyLabel* label = new MyLabel();
+                    myLabels[i * cols + j]->setText((*books)[i * cols + j + startBook]->GetValues()[2]);
+                    //label->setText(titles[i * cols + j]); //
+                    myLabels[i * cols + j]->SetIndex(i * cols + j + startBook); //
+                    //QWidget* wwww = this->parentWidget();
+                    //qDebug() << qobject_cast<MainWindow*>(this->parentWidget());
+                    //qDebug() << qobject_cast<MainWindow*>(this->mainw);
+                    //label->SetWindow(this->mainw); //
+                    //label->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+                    //label->setAlignment(Qt::AlignCenter);
+                    //QFont font = label->font();
+                    //font.setPixelSize(50);
+                    //label->setFont(font);
+                    //QVBoxLayout* vbox = new QVBoxLayout();
+                    //vbox->addWidget(lb);
+                    //vbox->addWidget(label);
+                    //labels.append(label);
 
-                //btns.append(lb);
-                //labels.append(label);
-                //grid->addLayout(vbox, i, j);
+                    //btns.append(lb);
+                    //labels.append(label);
+                    //grid->addLayout(vbox, i, j);
+                }
             }
         }
     }
@@ -370,7 +484,6 @@ QScrollArea* Widget::GetArea()
 
 QVector<QString>* Widget::GetTitlesV()
 {
-    //qDebug() << "c";
     return &titles;
 }
 
@@ -403,4 +516,24 @@ void Widget::SetMainW(MainWindow* widget)
 {
     this->mainw = widget;
     qDebug() << this->mainw;
+}
+
+QVector<Item*>* Widget::GetBooks()
+{
+    return books;
+}
+
+QVector<Item*>* Widget::GetSBooks()
+{
+    return sbooks;
+}
+
+Bookbase* Widget::GetBookbase()
+{
+    return bookbase;
+}
+
+SBookbase* Widget::GetSBookbase()
+{
+    return sbookbase;
 }

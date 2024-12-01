@@ -1,6 +1,8 @@
 #include "user.h"
 
-User::User() {}
+User::User() {
+    featured = nullptr;
+}
 
 QString User::GetLogin()
 {

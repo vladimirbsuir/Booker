@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QPixmap>
 
+class Item;
 class User;
 class Widget;
 class MainWindow;
@@ -28,6 +29,9 @@ private:
     QStringList* featured;
     QVector<QString> images;
     QVector<QString> titles;
+
+    QVector<Item*>* books;
+    QVector<Item*>* sbooks;
 
     QScrollArea* area;
     QGridLayout* grid;

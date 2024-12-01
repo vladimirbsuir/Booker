@@ -3,7 +3,7 @@
 
 #include <QSqlError>
 
-Database::Database(User* user) {
+Database::Database(User* user) : OBase() {
     this->user = user;
 
     db = QSqlDatabase::addDatabase("QSQLITE");

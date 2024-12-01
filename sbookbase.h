@@ -1,16 +1,16 @@
-#ifndef BOOKBASE_H
-#define BOOKBASE_H
+#ifndef SBOOKBASE_H
+#define SBOOKBASE_H
 
 #include "filebase.h"
-#include "book.h"
+#include "serialbook.h"
 
-#define book_size 5
+#define sbook_size 6
 
-class Bookbase : public Filebase
+class SBookbase : public Filebase
 {
 public:
-    Bookbase(QString);
-    Bookbase();
+    SBookbase(QString);
+    SBookbase();
 
     QVector<Item*>* Read(int, int) override;
     void Write(QVector<Item*>*, int, int) override;
@@ -19,4 +19,4 @@ public:
     bool Delete(QString, int) override;
 };
 
-#endif // BOOKBASE_H
+#endif // SBOOKBASE_H

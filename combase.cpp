@@ -1,6 +1,6 @@
 #include "combase.h"
 
-Combase::Combase() {
+Combase::Combase() : OBase() {
     db = QSqlDatabase::addDatabase("QSQLITE", "DB2");
     db.setDatabaseName("./comments.db");
     query = new QSqlQuery(db);

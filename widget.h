@@ -5,6 +5,9 @@
 class MainWindow;
 class MyLabel;
 class Menu;
+class Bookbase;
+class Item;
+class SBookbase;
 
 #include <QWidget>
 #include <QGridLayout>
@@ -32,11 +35,22 @@ public:
     void on_pageCatBtn_clicked(int);
     void ChangeBtns(int modifier, int firstN = 0);
 
+    QVector<Item*>* GetBooks();
+    QVector<Item*>* GetSBooks();
+
     QVector<QString> GetTitles();
     QVector<QString> GetImages();
 
+    Bookbase* GetBookbase();
+    SBookbase* GetSBookbase();
+
 private:
     MainWindow* mainw;
+    Bookbase* bookbase;
+    SBookbase* sbookbase;
+
+    QVector<Item*>* books;
+    QVector<Item*>* sbooks;
 
     QString line;
     QByteArray rawLine;

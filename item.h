@@ -8,7 +8,7 @@ class Item
 public:
     virtual void Print()
     {
-        qDebug() << "good";
+        qDebug() << "Print";
     }
     QString* GetValues();
 

@@ -9,9 +9,6 @@
 #include <QPushButton>
 #include <QTextEdit>
 
-// Добавить добавление при авторизации featured строки с индексами книг, продумать, надо ли хранить в user эту строку, как обращаться к ней
-// и выводить информацию
-
 class Widget;
 class MyImageLabel;
 class User;

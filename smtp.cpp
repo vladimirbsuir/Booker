@@ -1,17 +1,15 @@
 #include "smtp.h"
-// fsqe xltf gvdp uthu
 
 
-Smtp::Smtp( const QString &user, const QString &pass, const QString &host, int port, int timeout )
+Smtp::Smtp(const QString& user, const QString& pass, const QString& host, int port, int timeout )
 {
     socket = new QSslSocket(this);
 
-    connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(errorReceived(QAbstractSocket::SocketError)));
-    connect(socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(stateChanged(QAbstractSocket::SocketState)));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-
+    connect(socket, SIGNAL(readyRead()), this, SLOT(ReadyRead()));
+    connect(socket, SIGNAL(connected()), this, SLOT(Connected()));
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(ErrorReceived(QAbstractSocket::SocketError)));
+    connect(socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(StateChanged(QAbstractSocket::SocketState)));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(Disconnected()));
 
     this->user = user;
     this->pass = pass;
@@ -21,62 +19,56 @@ Smtp::Smtp( const QString &user, const QString &pass, const QString &host, int p
     this->timeout = timeout;
 }
 
-void Smtp::sendMail(const QString &from, const QString &to, const QString &subject, const QString &body)
+void Smtp::SendMail(const QString &from, const QString &to, const QString &subject, const QString &body)
 {
     message = "To: " + to + "\n";
     message.append("From: " + from + "\n");
     message.append("Subject: " + subject + "\n");
     message.append(body);
-    message.replace( QString::fromLatin1( "\n" ), QString::fromLatin1( "\r\n" ) );
-    message.replace( QString::fromLatin1( "\r\n.\r\n" ),
-                    QString::fromLatin1( "\r\n..\r\n" ) );
+    message.replace(QString::fromLatin1( "\n" ), QString::fromLatin1( "\r\n" ) );
+    message.replace(QString::fromLatin1( "\r\n.\r\n" ), QString::fromLatin1( "\r\n..\r\n" ) );
     this->from = from;
     rcpt = to;
     state = Init;
-    socket->connectToHostEncrypted(host, port); //"smtp.gmail.com" and 465 for gmail TLS
-    if (!socket->waitForConnected(timeout)) {
+    socket->connectToHostEncrypted(host, port);
+    if (!socket->waitForConnected(timeout))
+    {
         qDebug() << socket->errorString();
     }
 
-    t = new QTextStream( socket );
-
-
-
+    sts = new QTextStream(socket);
 }
 
 Smtp::~Smtp()
 {
-    delete t;
+    delete sts;
     delete socket;
 }
-void Smtp::stateChanged(QAbstractSocket::SocketState socketState)
-{
 
-    qDebug() <<"stateChanged " << socketState;
+void Smtp::StateChanged(QAbstractSocket::SocketState socketState)
+{
+    qDebug() <<"State was changed " << socketState;
 }
 
-void Smtp::errorReceived(QAbstractSocket::SocketError socketError)
+void Smtp::ErrorReceived(QAbstractSocket::SocketError socketError)
 {
-    qDebug() << "error " << socketError;
+    qDebug() << "Error: " << socketError;
 }
 
-void Smtp::disconnected()
+void Smtp::Disconnected()
 {
-
-    qDebug() <<"disconneted";
-    qDebug() << "error "  << socket->errorString();
+    qDebug() <<"Disconneted";
+    qDebug() << "Error: "  << socket->errorString();
 }
 
-void Smtp::connected()
+void Smtp::Connected()
 {
-    qDebug() << "Connected ";
+    qDebug() << "Connected";
 }
 
-void Smtp::readyRead()
+void Smtp::ReadyRead()
 {
-
-    qDebug() <<"readyRead";
-    // SMTP is line-oriented
+    qDebug() <<"Ready to read";
 
     QString responseLine;
     do
@@ -84,30 +76,20 @@ void Smtp::readyRead()
         responseLine = socket->readLine();
         response += responseLine;
     }
-    while ( socket->canReadLine() && responseLine[3] != ' ' );
+    while (socket->canReadLine() && responseLine[3] != ' ');
 
-    responseLine.truncate( 3 );
+    responseLine.truncate(3);
 
-    qDebug() << "Server response code:" <<  responseLine;
+    qDebug() << "Server response code: " <<  responseLine;
     qDebug() << "Server response: " << response;
 
-    if ( state == Init && responseLine == "220" )
+    if (state == Init && responseLine == "220")
     {
-        // banner was okay, let's go on
-        *t << "EHLO localhost" <<"\r\n";
-        t->flush();
+        *sts << "EHLO localhost" <<"\r\n";
+        sts->flush();
 
         state = HandShake;
     }
-    //No need, because I'm using socket->startClienEncryption() which makes the SSL handshake for you
-    /*else if (state == Tls && responseLine == "250")
-    {
-        // Trying AUTH
-        qDebug() << "STarting Tls";
-        *t << "STARTTLS" << "\r\n";
-        t->flush();
-        state = HandShake;
-    }*/
     else if (state == HandShake && responseLine == "250")
     {
         socket->startClientEncryption();
@@ -117,95 +99,77 @@ void Smtp::readyRead()
             state = Close;
         }
 
-
-        //Send EHLO once again but now encrypted
-
-        *t << "EHLO localhost" << "\r\n";
-        t->flush();
+        *sts << "EHLO localhost" << "\r\n";
+        sts->flush();
         state = Auth;
     }
     else if (state == Auth && responseLine == "250")
     {
-        // Trying AUTH
         qDebug() << "Auth";
-        *t << "AUTH LOGIN" << "\r\n";
-        t->flush();
+        *sts << "AUTH LOGIN" << "\r\n";
+        sts->flush();
         state = User;
     }
     else if (state == User && responseLine == "334")
     {
-        //Trying User
         qDebug() << "Username";
-        //GMAIL is using XOAUTH2 protocol, which basically means that password and username has to be sent in base64 coding
-        //https://developers.google.com/gmail/xoauth2_protocol
 
-        *t << QByteArray().append(user.toLocal8Bit().data()).toBase64()  << "\r\n";
-        t->flush();
+        *sts << QByteArray().append(user.toLocal8Bit().data()).toBase64()  << "\r\n";
+        sts->flush();
 
         state = Pass;
     }
     else if (state == Pass && responseLine == "334")
     {
-        QString p = "fsqe xltf gvdp uthu";
-        //Trying pass
+        //QString p = "fsqe xltf gvdp uthu";
         qDebug() << "Pass";
-        //*t << QByteArray().append(pass.toLocal8Bit().data()).toBase64() << "\r\n";
-        *t << QByteArray().append(p.toLocal8Bit().data()).toBase64() << "\r\n";
-        t->flush();
+        *sts << QByteArray().append(pass.toLocal8Bit().data()).toBase64() << "\r\n";
+        sts->flush();
 
         state = Mail;
     }
-    else if ( state == Mail && responseLine == "235" )
+    else if (state == Mail && responseLine == "235")
     {
-        // HELO response was okay (well, it has to be)
-
-        //Apperantly for Google it is mandatory to have MAIL FROM and RCPT email formated the following way -> <email@gmail.com>
-        qDebug() << "MAIL FROM:<" << from << ">";
-        *t << "MAIL FROM:<" << from << ">\r\n";
-        t->flush();
+        //qDebug() << "MAIL FROM:<" << from << ">";
+        *sts << "MAIL FROM:<" << from << ">\r\n";
+        sts->flush();
         state = Rcpt;
     }
-    else if ( state == Rcpt && responseLine == "250" )
+    else if (state == Rcpt && responseLine == "250")
     {
-        //Apperantly for Google it is mandatory to have MAIL FROM and RCPT email formated the following way -> <email@gmail.com>
-        *t << "RCPT TO:<" << rcpt << ">\r\n"; //r
-        t->flush();
+        *sts << "RCPT TO:<" << rcpt << ">\r\n"; //r
+        sts->flush();
         state = Data;
     }
-    else if ( state == Data && responseLine == "250" )
+    else if (state == Data && responseLine == "250")
     {
-
-        *t << "DATA\r\n";
-        t->flush();
+        *sts << "DATA\r\n";
+        sts->flush();
         state = Body;
     }
-    else if ( state == Body && responseLine == "354" )
+    else if (state == Body && responseLine == "354")
     {
-
-        *t << message << "\r\n.\r\n";
-        t->flush();
+        *sts << message << "\r\n.\r\n";
+        sts->flush();
         state = Quit;
     }
-    else if ( state == Quit && responseLine == "250" )
+    else if (state == Quit && responseLine == "250")
     {
-
-        *t << "QUIT\r\n";
-        t->flush();
-        // here, we just close.
+        *sts << "QUIT\r\n";
+        sts->flush();
         state = Close;
-        emit status( tr( "Message sent" ) );
+        emit status(tr("Message sent"));
     }
-    else if ( state == Close )
+    else if (state == Close)
     {
         deleteLater();
         return;
     }
     else
     {
-        // something broke.
-        QMessageBox::warning( 0, tr( "Qt Simple SMTP client" ), tr( "Unexpected reply from SMTP server:\n\n" ) + response );
+        QMessageBox::warning(0, tr("SMTP"), tr("Unexpected reply from SMTP server:\n\n") + response);
         state = Close;
-        emit status( tr( "Failed to send message" ) );
+        emit status(tr("Failed to send message"));
     }
     response = "";
 }

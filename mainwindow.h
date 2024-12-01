@@ -10,6 +10,7 @@ class Widget;
 class User;
 class Profile;
 class Featured;
+class SearchingItems;
 
 class MainWindow : public QWidget
 {
@@ -35,6 +36,7 @@ private:
     Profile* profile;
     Featured* featured;
     Combase* combase;
+    SearchingItems* searching;
 };
 
 #endif // MAINWINDOW_H

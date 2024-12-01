@@ -2,6 +2,7 @@
 #include "user.h"
 #include "widget.h"
 #include "mylabel.h"
+#include "item.h"
 //#include "mainwindow.h"
 
 Featured::Featured(QWidget *parent, User* user, Widget* catalog, MainWindow* mainWindow)
@@ -57,14 +58,30 @@ void Featured::SetBooks()
     int index = 0;
 
     featured = user->GetFeatured();
-    images = catalog->GetImages();
-    titles = catalog->GetTitles();
+    //images = catalog->GetImages();
+    //titles = catalog->GetTitles();
+    books = catalog->GetBooks();
+    sbooks = catalog->GetSBooks();
+    QVector<Item*>* pBooks;
+    int isSBook = 0;
 
     for (int i = 0; i < featured->size(); i++)
     {
         index = (*featured)[i].toInt();
 
-        QPixmap im1(images[index]);
+        if (index >= 90)
+        {
+            index -= 90;
+            pBooks = sbooks;
+            isSBook = 1;
+        }
+        else
+        {
+            isSBook = 0;
+            pBooks = books;
+        }
+
+        QPixmap im1((*pBooks)[index]->GetValues()[0]);
         QLabel* lb = new QLabel();
         //widgets->append(lb);
         //imageLabels.append(lb);
@@ -77,8 +94,9 @@ void Featured::SetBooks()
         //label->setFixedHeight(100);
         label->SetWType(2);
         label->setWordWrap(true);
-        label->setText(titles[index]); //
-        label->SetIndex(index); //
+        label->setText((*pBooks)[index]->GetValues()[2]); //
+        if (isSBook) label->SetIndex(index + 90);
+        else label->SetIndex(index); //
 
         label->SetWindow(this->mainWindow); //
         label->setFrameStyle(QFrame::Panel | QFrame::Sunken);
